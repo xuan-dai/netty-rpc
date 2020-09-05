@@ -16,9 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 public class RegisterHandler extends ChannelInboundHandlerAdapter {
     // 存放类接口名和类对象实例
-    public static ConcurrentHashMap<String, Object> registryMap = new ConcurrentHashMap<String, Object>();
+    public static ConcurrentHashMap<String, Object> registryMap = new ConcurrentHashMap<>();
 
-    private List<String> classNames = new ArrayList<String>();
+    private List<String> classNames = new ArrayList<>();
 
     public RegisterHandler() {
         if (registryMap.isEmpty()) {
