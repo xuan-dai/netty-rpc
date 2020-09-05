@@ -3,6 +3,7 @@ package com.gorrila.netty.rpc.register;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
@@ -26,12 +27,12 @@ public class RpcRegister {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(bossGroup, workerGroup)
+            ChannelFuture future = new ServerBootstrap()
+                    .group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer<ServerChannel>() {
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        protected void initChannel(ServerChannel serverChannel) throws Exception {
+                        protected void initChannel(SocketChannel serverChannel) throws Exception {
                             // 自定义协议解码器
                             ChannelPipeline pipeline = serverChannel.pipeline();
                             // 框架的最大长度，长度属性的偏移量，长度字段的长度，要添加到长度属性的补偿值，从解码帧中去除的第一个字节数
@@ -46,12 +47,14 @@ public class RpcRegister {
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true);
-            ChannelFuture future = bootstrap.bind(port).sync();
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .bind(port).sync();
             System.out.println("GP RPC Register start listen at " + port);
             future.channel().closeFuture().sync();
         } catch (Exception e) {
             e.printStackTrace();
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
         }
     }
 

@@ -21,8 +21,10 @@ public class RegisterHandler extends ChannelInboundHandlerAdapter {
     private List<String> classNames = new ArrayList<String>();
 
     public RegisterHandler() {
-        scannerClass("com.gorrila.netty.rpc.provider");
-        doRegister();
+        if (registryMap.isEmpty()) {
+            scannerClass("com.gorrila.netty.rpc.provider");
+            doRegister();
+        }
     }
 
     @Override
@@ -43,7 +45,7 @@ public class RegisterHandler extends ChannelInboundHandlerAdapter {
         File dir = new File(url.getFile());
         for (File file : dir.listFiles()) {
             if (file.isFile()) {
-                classNames.add(file.getName().replace(".class", "").trim());
+                classNames.add(packageName + "." + file.getName().replace(".class", "").trim());
             } else {
                 scannerClass(packageName + "." + file.getName());
             }
@@ -53,6 +55,7 @@ public class RegisterHandler extends ChannelInboundHandlerAdapter {
 
     private void doRegister() {
         if (classNames.size() == 0) {
+            System.out.println("class names is empty");
             return;
         }
         for (String className : classNames) {
