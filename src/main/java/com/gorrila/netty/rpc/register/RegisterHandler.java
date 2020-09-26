@@ -8,6 +8,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -42,8 +43,9 @@ public class RegisterHandler extends ChannelInboundHandlerAdapter {
 
     private void scannerClass(String packageName) {
         URL url = this.getClass().getClassLoader().getResource(packageName.replaceAll("\\.", "/"));
+        assert url != null;
         File dir = new File(url.getFile());
-        for (File file : dir.listFiles()) {
+        for (File file : Objects.requireNonNull(dir.listFiles())) {
             if (file.isFile()) {
                 classNames.add(packageName + "." + file.getName().replace(".class", "").trim());
             } else {

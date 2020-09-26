@@ -57,12 +57,21 @@ public class RpcProxy {
             msg.setValues(args);
 
             final RpcProxyHandler consumerHandler = new RpcProxyHandler();
+            // EventLoopGroup 内部维护了线程数默认为 核心数 * 2 的线程池
+            // 同时引用 provider 对象创建 selector
             NioEventLoopGroup group = new NioEventLoopGroup();
 
             try {
+                // Bootstrap 便利工厂类，用于来完成客户端 netty 的初始化
                 ChannelFuture future = new Bootstrap().group(group)
+                        // channel 相当于对 socket 的抽象，netty 为支持的每种协议及对应的网络模型配置不同的 channel
+                        // NioSocketChannel 表示异步非阻塞的客户端 TCP Socket
+                        // NioServerSocketChannel 表示异步非阻塞的服务端 TCP Socket
+                        // 使用 ChannelFactory#newChannel 实例化指定类型的 channel
                         .channel(NioSocketChannel.class)
+                        // 关闭 Nagle 算法，是能够发送较小的报文，使传输延时最小化
                         .option(ChannelOption.TCP_NODELAY, true)
+                        // 设置处理数据的 handler
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel socketChannel) throws Exception {
@@ -80,12 +89,18 @@ public class RpcProxy {
                                 pipeline.addLast("handler", consumerHandler);
                             }
                         })
-                        .connect("localhost", 18080).sync();
+                        // 指定连接服务端的地址和端口
+                        // 关联 channel 和 EventLoop
+                        // 将 channel 注册到 selector
+                        // 将 java nio 底层的 SocketChannel 注册到指定的 Selector
+                        .connect("localhost", 18080)
+                        .sync();
                 future.channel().writeAndFlush(msg).sync();
                 future.channel().closeFuture().sync();
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
+                // 关闭资源，释放线程资源
                 group.shutdownGracefully();
             }
 

@@ -27,8 +27,10 @@ public class RpcRegister {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
+            // Bootstrap 便利工厂类，用于来完成服务端 netty 的初始化
             ChannelFuture future = new ServerBootstrap()
                     .group(bossGroup, workerGroup)
+                    // NioServerSocketChannel 表示异步非阻塞的服务端 TCP Socket
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
@@ -46,9 +48,10 @@ public class RpcRegister {
                             pipeline.addLast(new RegisterHandler());
                         }
                     })
+                    // ChannelOption.SO_BACKLOG 表示服务端接受连接的队列长度，如果队列长度已满，客户端连接将会被拒绝
                     .option(ChannelOption.SO_BACKLOG, 128)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .bind(port).sync();
+                    // 连接保活，tcp 会主动探测空闲连接的有效性，时间间隔为 2h
+                    .childOption(ChannelOption.SO_KEEPALIVE, true).bind(port).sync();
             System.out.println("GP RPC Register start listen at " + port);
             future.channel().closeFuture().sync();
         } catch (Exception e) {
